@@ -36,6 +36,10 @@ a, .btn-link {
     color: red;
 }
 
+.modal-backdrop-custom {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
 #blazor-error-ui {
     color-scheme: light only;
     background: lightyellow;

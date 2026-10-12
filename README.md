@@ -137,3 +137,41 @@ Proyecto académico de **Programación II**.
 - Teléfono: exactamente 8 dígitos; el campo bloquea letras y limita la longitud.
 - Fecha de nacimiento: no permite fechas futuras.
 - Los errores de la API al crear o editar se muestran dentro del modal activo.
+---
+
+## Análisis de seguridad con OWASP ZAP
+
+El proyecto incluye evidencia de un análisis de seguridad realizado con OWASP ZAP.
+
+La evidencia se encuentra en:
+
+```text
+Seguridad/
+├── Informe_ZAP_Antes.html
+├── Informe_ZAP_Despues.html
+└── Comparativa_ZAP.md
+```
+
+Para aplicar cabeceras HTTP de seguridad a la aplicación Blazor WebAssembly se agregó un host ASP.NET Core en la carpeta `Server`.
+
+Ejecutar el frontend para el análisis de seguridad con:
+
+```bash
+dotnet run --project Server/Programacion2ClientesBlazor.Server.csproj
+```
+
+La aplicación queda disponible en:
+
+```text
+http://localhost:5122/clientes
+```
+
+Las principales cabeceras incorporadas son:
+
+- `Content-Security-Policy`
+- `X-Frame-Options`
+- `X-Content-Type-Options`
+- `Referrer-Policy`
+- `Permissions-Policy`
+
+> El archivo `Informe_ZAP_Despues.html` debe generarse después del segundo análisis de OWASP ZAP.
