@@ -179,6 +179,18 @@
 
                     <div class="modal-body">
 
+                        @if (!string.IsNullOrEmpty(mensajeModal))
+                        {
+                            <div class="alert @claseMensajeModal alert-dismissible fade show mb-3"
+                                 role="alert">
+                                @mensajeModal
+                                <button type="button"
+                                        class="btn-close"
+                                        @onclick="CerrarMensajeModal">
+                                </button>
+                            </div>
+                        }
+
                         <div class="row g-3">
 
                             <div class="col-md-6">
@@ -188,9 +200,17 @@
                                 </label>
 
                                 <InputText class="form-control"
-                                           @bind-Value="clienteActual.CUI" />
+                                        @bind-Value="clienteActual.CUI"
+                                        maxlength="13"
+                                        inputmode="numeric"
+                                        autocomplete="off"
+                                        oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,13)" />
 
                                 <ValidationMessage For="@(() => clienteActual.CUI)" />
+
+                                <div class="form-text">
+                                    Exactamente 13 dígitos.
+                                </div>
 
                             </div>
 
@@ -200,10 +220,23 @@
                                     NIT *
                                 </label>
 
-                                <InputText class="form-control"
-                                           @bind-Value="clienteActual.NIT" />
+                                <InputText class="form-control text-uppercase"
+                                        @bind-Value="clienteActual.NIT"
+                                        maxlength="11"
+                                        autocomplete="off"
+                                        oninput="
+                                            this.value = this.value
+                                                .toUpperCase()
+                                                .replace(/[^0-9K-]/g, '')
+                                                .replace(/K(?!$)/g, '')
+                                                .slice(0, 11)
+                                        " />
 
                                 <ValidationMessage For="@(() => clienteActual.NIT)" />
+
+                                <div class="form-text">
+                                    Ejemplos: 12345678, 123456789, 1234567-8 o 1234567-K.
+                                </div>
 
                             </div>
 
@@ -253,9 +286,17 @@
                                 </label>
 
                                 <InputText class="form-control"
-                                           @bind-Value="clienteActual.Telefono" />
+                                        @bind-Value="clienteActual.Telefono"
+                                        maxlength="8"
+                                        inputmode="numeric"
+                                        autocomplete="off"
+                                        oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,8)" />
 
                                 <ValidationMessage For="@(() => clienteActual.Telefono)" />
+
+                                <div class="form-text">
+                                    Exactamente 8 dígitos.
+                                </div>
 
                             </div>
 
@@ -266,7 +307,8 @@
                                 </label>
 
                                 <InputDate class="form-control"
-                                           @bind-Value="clienteActual.Fecha_Nacimiento" />
+                                           @bind-Value="clienteActual.Fecha_Nacimiento"
+                                           max="@FechaMaxima" />
 
                                 <ValidationMessage For="@(() => clienteActual.Fecha_Nacimiento)" />
 
@@ -411,6 +453,12 @@
 
     private string claseMensaje = "alert-success";
 
+    private string mensajeModal = string.Empty;
+
+    private string claseMensajeModal = "alert-danger";
+
+    private string FechaMaxima => DateTime.Today.ToString("yyyy-MM-dd");
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -443,6 +491,8 @@
 
     private void AbrirModalNuevo()
     {
+        CerrarMensajeModal();
+
         clienteActual = new Cliente
         {
             Fecha_Nacimiento = DateTime.Today
@@ -456,6 +506,8 @@
 
     private void AbrirModalEditar(Cliente cliente)
     {
+        CerrarMensajeModal();
+
         clienteActual = new Cliente
         {
             Id_cliente = cliente.Id_cliente,
@@ -477,6 +529,7 @@
     private void CerrarModalCliente()
     {
         mostrarModalCliente = false;
+        CerrarMensajeModal();
     }
 
 
@@ -486,45 +539,41 @@
         {
             guardando = true;
 
-            bool resultado;
+            ResultadoOperacion resultado;
 
             if (esEdicion)
             {
                 resultado =
-                    await ClienteService
-                        .ActualizarClienteAsync(clienteActual);
+                    await ClienteService.ActualizarClienteAsync(clienteActual);
             }
             else
             {
                 resultado =
-                    await ClienteService
-                        .CrearClienteAsync(clienteActual);
+                    await ClienteService.CrearClienteAsync(clienteActual);
             }
 
-            if (resultado)
+            if (resultado.Exito)
             {
                 mostrarModalCliente = false;
 
                 await CargarClientes();
 
                 MostrarMensaje(
-                    esEdicion
-                        ? "Cliente actualizado correctamente."
-                        : "Cliente registrado correctamente.",
+                    resultado.Mensaje,
                     "alert-success"
                 );
             }
             else
             {
-                MostrarMensaje(
-                    "No fue posible guardar el cliente.",
+                MostrarMensajeModal(
+                    resultado.Mensaje,
                     "alert-danger"
                 );
             }
         }
         catch (Exception ex)
         {
-            MostrarMensaje(
+            MostrarMensajeModal(
                 $"Error al guardar: {ex.Message}",
                 "alert-danger"
             );
@@ -564,28 +613,26 @@
             eliminando = true;
 
             var resultado =
-                await ClienteService
-                    .EliminarClienteAsync(
-                        clienteEliminar.Id_cliente
-                    );
+                await ClienteService.EliminarClienteAsync(
+                    clienteEliminar.Id_cliente
+                );
 
-            if (resultado)
+            if (resultado.Exito)
             {
                 mostrarModalEliminar = false;
-
                 clienteEliminar = null;
 
                 await CargarClientes();
 
                 MostrarMensaje(
-                    "Cliente eliminado correctamente.",
+                    resultado.Mensaje,
                     "alert-success"
                 );
             }
             else
             {
                 MostrarMensaje(
-                    "No fue posible eliminar el cliente.",
+                    resultado.Mensaje,
                     "alert-danger"
                 );
             }
@@ -614,6 +661,20 @@
         claseMensaje = clase;
     }
 
+
+    private void MostrarMensajeModal(
+        string texto,
+        string clase
+    )
+    {
+        mensajeModal = texto;
+        claseMensajeModal = clase;
+    }
+
+    private void CerrarMensajeModal()
+    {
+        mensajeModal = string.Empty;
+    }
 
     private void CerrarMensaje()
     {

@@ -1,247 +1,123 @@
 # Programacion2ClientesBlazor
 
-Aplicación web desarrollada con **Blazor WebAssembly sobre .NET 10** para la administración de clientes.
+Aplicación web desarrollada con **Blazor WebAssembly sobre .NET 10** para administrar clientes consumiendo la API REST `Programacion2ClientesAPI`.
 
-La aplicación consume una **API REST externa** desarrollada previamente en ASP.NET Core y no accede directamente a la base de datos.
-
-## Objetivo
-
-Desarrollar un módulo de administración de clientes utilizando Blazor, Bootstrap y validaciones de formulario, consumiendo exclusivamente los endpoints expuestos por la API REST.
-
-## Tecnologías utilizadas
-
-- .NET 10
-- Blazor WebAssembly
-- ASP.NET Core
-- Bootstrap
-- C#
-- HttpClient
-- DataAnnotations
-- API REST
-- MySQL (accedido únicamente a través de la API)
-- Visual Studio Code
-- Git
-- GitHub
+Blazor no accede directamente a MySQL. Toda operación se realiza mediante `HttpClient` contra la API.
 
 ## Arquitectura
 
 ```text
+Usuario
+   ↓
 Blazor WebAssembly
-        |
-        | HTTP / JSON
-        v
+   ↓
+ClienteService
+   ↓ HTTP / JSON
 Programacion2ClientesAPI
-        |
-        | Entity Framework Core
-        v
+   ↓
+Entity Framework Core
+   ↓
 MySQL
 ```
 
-La aplicación Blazor **no tiene acceso directo a MySQL**. Toda operación se realiza mediante la API REST.
-
-## Funcionalidades
-
-El módulo de clientes permite:
-
-- Visualizar los clientes registrados.
-- Agregar nuevos clientes.
-- Modificar clientes existentes.
-- Eliminar clientes.
-- Actualizar automáticamente el listado después de cada operación.
-- Mostrar mensajes de confirmación o error.
-- Validar los datos ingresados en los formularios.
-- Utilizar ventanas modales para crear, editar y eliminar clientes.
-
-## Operaciones CRUD consumidas
-
-| Operación              | Método HTTP | Endpoint             |
-| ---------------------- | ----------- | -------------------- |
-| Listar clientes        | GET         | `/api/clientes`      |
-| Obtener cliente por ID | GET         | `/api/clientes/{id}` |
-| Crear cliente          | POST        | `/api/clientes`      |
-| Actualizar cliente     | PUT         | `/api/clientes/{id}` |
-| Eliminar cliente       | DELETE      | `/api/clientes/{id}` |
-
-## Modelo Cliente
-
-La aplicación trabaja con los siguientes campos:
-
-| Campo              | Descripción                         |
-| ------------------ | ----------------------------------- |
-| `Id_cliente`       | Identificador único del cliente     |
-| `CUI`              | Código Único de Identificación      |
-| `NIT`              | Número de Identificación Tributaria |
-| `Nombres`          | Nombres del cliente                 |
-| `Apellidos`        | Apellidos del cliente               |
-| `Direccion`        | Dirección del cliente               |
-| `Telefono`         | Número de teléfono                  |
-| `Fecha_Nacimiento` | Fecha de nacimiento                 |
-
-## Estructura principal del proyecto
+## Estructura
 
 ```text
 Programacion2ClientesBlazor/
-│
 ├── Layout/
 │   ├── MainLayout.razor
 │   └── NavMenu.razor
-│
 ├── Models/
-│   └── Cliente.cs
-│
+│   ├── Cliente.cs
+│   ├── CrearClienteDto.cs
+│   ├── ActualizarClienteDto.cs
+│   ├── ResultadoOperacion.cs
+│   └── ErrorApi.cs
 ├── Pages/
+│   ├── Home.razor
 │   └── Clientes.razor
-│
 ├── Services/
 │   └── ClienteService.cs
-│
 ├── wwwroot/
-│
 ├── App.razor
 ├── Program.cs
-├── _Imports.razor
-├── Programacion2ClientesBlazor.csproj
-└── README.md
+└── Programacion2ClientesBlazor.csproj
 ```
 
-## Servicio de clientes
+## Funcionalidades
 
-`ClienteService.cs` utiliza `HttpClient` para consumir la API REST.
+- Visualizar clientes.
+- Crear clientes.
+- Editar clientes.
+- Eliminar clientes.
+- Actualizar automáticamente el listado tras cada operación.
+- Mostrar mensajes devueltos por la API.
+- Validar datos mediante `DataAnnotations`.
+- Utilizar Bootstrap para tabla, formularios, alertas, botones, spinners y ventanas modales.
 
-Ejemplo conceptual:
+## API consumida
 
-```csharp
-await _httpClient.GetFromJsonAsync<List<Cliente>>("api/clientes");
-```
-
-La dirección base de la API se configura en `Program.cs`.
-
-Ejemplo local:
-
-```csharp
-builder.Services.AddScoped(sp => new HttpClient
-{
-    BaseAddress = new Uri("http://localhost:5169/")
-});
-```
-
-## Requisitos previos
-
-Antes de ejecutar Blazor, la API debe estar iniciada.
-
-Repositorio de la API:
+Dirección utilizada durante el desarrollo:
 
 ```text
-https://github.com/abralc/Programacion2ClientesAPI
+http://localhost:5169/
 ```
 
-Ejemplo de dirección local de la API:
+Endpoints:
 
-```text
-http://localhost:5169
-```
+| Método | Endpoint |
+|---|---|
+| GET | `/api/clientes` |
+| GET | `/api/clientes/{id}` |
+| POST | `/api/clientes` |
+| PUT | `/api/clientes/{id}` |
+| DELETE | `/api/clientes/{id}` |
 
-## Ejecutar la aplicación
+## Ejecutar
 
-Clonar el repositorio:
+Primero debe estar ejecutándose la API.
 
-```bash
-git clone git@github.com:abralc/Programacion2ClientesBlazor.git
-```
-
-Entrar al proyecto:
-
-```bash
-cd Programacion2ClientesBlazor
-```
-
-Restaurar dependencias:
+Después:
 
 ```bash
 dotnet restore
-```
-
-Compilar:
-
-```bash
 dotnet build
-```
-
-Ejecutar:
-
-```bash
 dotnet run
 ```
 
-En el entorno de desarrollo utilizado para este proyecto, Blazor se ejecuta en:
+En el entorno utilizado durante el desarrollo:
 
 ```text
 http://localhost:5122
 ```
 
-El módulo de clientes está disponible en:
+Módulo de clientes:
 
 ```text
 http://localhost:5122/clientes
 ```
 
-> El puerto puede cambiar según la configuración local de `launchSettings.json`.
-
 ## Validaciones
 
-Los formularios utilizan `DataAnnotations` junto con los componentes de formulario de Blazor.
+La interfaz valida, entre otros:
 
-Entre las validaciones se incluyen:
-
-- CUI obligatorio.
-- CUI con longitud definida.
+- CUI obligatorio y de 13 dígitos.
 - NIT obligatorio.
-- Nombres obligatorios.
-- Apellidos obligatorios.
+- Nombres y apellidos obligatorios.
+- Teléfono de 8 dígitos cuando se proporciona.
 - Fecha de nacimiento obligatoria.
-- Límites de longitud para los campos de texto.
 
-Los mensajes de validación se muestran dentro de los formularios utilizados en los modales.
-
-## Bootstrap
-
-La interfaz utiliza Bootstrap para:
-
-- Diseño responsive.
-- Tabla de clientes.
-- Botones.
-- Alertas.
-- Spinners.
-- Formularios.
-- Ventanas modales.
-- Distribución mediante grid.
-
-## Flujo de actualización
-
-Después de crear, editar o eliminar un cliente, la aplicación vuelve a consultar la API para actualizar la información mostrada.
-
-```text
-Operación CRUD
-      |
-      v
-API REST
-      |
-      v
-CargarClientes()
-      |
-      v
-Tabla actualizada
-```
+La API vuelve a validar los datos y controla duplicados de CUI/NIT y fechas no válidas.
 
 ## Repositorios
 
-Aplicación Blazor:
+Blazor:
 
 ```text
 https://github.com/abralc/Programacion2ClientesBlazor
 ```
 
-API REST:
+API:
 
 ```text
 https://github.com/abralc/Programacion2ClientesAPI
@@ -251,4 +127,13 @@ https://github.com/abralc/Programacion2ClientesAPI
 
 **Abraham López**
 
-Proyecto desarrollado para el curso de **Programación II**.
+Proyecto académico de **Programación II**.
+
+
+## Validaciones de campos
+
+- CUI: exactamente 13 dígitos; el campo bloquea letras y limita la longitud.
+- NIT: únicamente dígitos, entre 8 y 15 caracteres.
+- Teléfono: exactamente 8 dígitos; el campo bloquea letras y limita la longitud.
+- Fecha de nacimiento: no permite fechas futuras.
+- Los errores de la API al crear o editar se muestran dentro del modal activo.

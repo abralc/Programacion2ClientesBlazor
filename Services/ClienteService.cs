@@ -1,62 +1,145 @@
 using System.Net.Http.Json;
 using Programacion2ClientesBlazor.Models;
 
-namespace Programacion2ClientesBlazor.Services
+namespace Programacion2ClientesBlazor.Services;
+
+public class ClienteService
 {
-    public class ClienteService
+    private readonly HttpClient _httpClient;
+
+    public ClienteService(HttpClient httpClient)
     {
-        private readonly HttpClient _httpClient;
+        _httpClient = httpClient;
+    }
 
-        public ClienteService(HttpClient httpClient)
+    public async Task<List<Cliente>> ObtenerClientesAsync()
+    {
+        using var response = await _httpClient.GetAsync("api/clientes");
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<List<Cliente>>()
+            ?? new List<Cliente>();
+    }
+
+    public async Task<Cliente?> ObtenerClientePorIdAsync(int id)
+    {
+        using var response = await _httpClient.GetAsync($"api/clientes/{id}");
+
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
-            _httpClient = httpClient;
+            return null;
         }
 
-        // GET: obtener todos los clientes
-        public async Task<List<Cliente>> ObtenerClientesAsync()
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<Cliente>();
+    }
+
+    public async Task<ResultadoOperacion> CrearClienteAsync(Cliente cliente)
+    {
+        var dto = new CrearClienteDto
         {
-            return await _httpClient
-                .GetFromJsonAsync<List<Cliente>>("api/clientes")
-                ?? new List<Cliente>();
+            CUI = cliente.CUI,
+            NIT = cliente.NIT,
+            Nombres = cliente.Nombres,
+            Apellidos = cliente.Apellidos,
+            Direccion = cliente.Direccion,
+            Telefono = cliente.Telefono,
+            Fecha_Nacimiento = cliente.Fecha_Nacimiento
+        };
+
+        using var response =
+            await _httpClient.PostAsJsonAsync("api/clientes", dto);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return new ResultadoOperacion
+            {
+                Exito = true,
+                Mensaje = "Cliente registrado correctamente."
+            };
         }
 
-        // GET: obtener cliente por ID
-        public async Task<Cliente?> ObtenerClientePorIdAsync(int id)
+        return await LeerErrorAsync(
+            response,
+            "No fue posible registrar el cliente.");
+    }
+
+    public async Task<ResultadoOperacion> ActualizarClienteAsync(
+        Cliente cliente)
+    {
+        var dto = new ActualizarClienteDto
         {
-            return await _httpClient
-                .GetFromJsonAsync<Cliente>($"api/clientes/{id}");
+            CUI = cliente.CUI,
+            NIT = cliente.NIT,
+            Nombres = cliente.Nombres,
+            Apellidos = cliente.Apellidos,
+            Direccion = cliente.Direccion,
+            Telefono = cliente.Telefono,
+            Fecha_Nacimiento = cliente.Fecha_Nacimiento
+        };
+
+        using var response = await _httpClient.PutAsJsonAsync(
+            $"api/clientes/{cliente.Id_cliente}",
+            dto
+        );
+
+        if (response.IsSuccessStatusCode)
+        {
+            return new ResultadoOperacion
+            {
+                Exito = true,
+                Mensaje = "Cliente actualizado correctamente."
+            };
         }
 
-        // POST: crear cliente
-        public async Task<bool> CrearClienteAsync(Cliente cliente)
-        {
-            var response = await _httpClient.PostAsJsonAsync(
-                "api/clientes",
-                cliente
-            );
+        return await LeerErrorAsync(
+            response,
+            "No fue posible actualizar el cliente.");
+    }
 
-            return response.IsSuccessStatusCode;
+    public async Task<ResultadoOperacion> EliminarClienteAsync(int id)
+    {
+        using var response =
+            await _httpClient.DeleteAsync($"api/clientes/{id}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            return new ResultadoOperacion
+            {
+                Exito = true,
+                Mensaje = "Cliente eliminado correctamente."
+            };
         }
 
-        // PUT: actualizar cliente
-        public async Task<bool> ActualizarClienteAsync(Cliente cliente)
-        {
-            var response = await _httpClient.PutAsJsonAsync(
-                $"api/clientes/{cliente.Id_cliente}",
-                cliente
-            );
+        return await LeerErrorAsync(
+            response,
+            "No fue posible eliminar el cliente.");
+    }
 
-            return response.IsSuccessStatusCode;
+    private static async Task<ResultadoOperacion> LeerErrorAsync(
+        HttpResponseMessage response,
+        string mensajePredeterminado)
+    {
+        try
+        {
+            var error =
+                await response.Content.ReadFromJsonAsync<ErrorApi>();
+
+            return new ResultadoOperacion
+            {
+                Exito = false,
+                Mensaje = string.IsNullOrWhiteSpace(error?.Mensaje)
+                    ? mensajePredeterminado
+                    : error.Mensaje
+            };
         }
-
-        // DELETE: eliminar cliente
-        public async Task<bool> EliminarClienteAsync(int id)
+        catch
         {
-            var response = await _httpClient.DeleteAsync(
-                $"api/clientes/{id}"
-            );
-
-            return response.IsSuccessStatusCode;
+            return new ResultadoOperacion
+            {
+                Exito = false,
+                Mensaje = mensajePredeterminado
+            };
         }
     }
 }
